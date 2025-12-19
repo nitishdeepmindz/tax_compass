@@ -1,0 +1,1605 @@
+openapi: 3.1.0
+x-stoplight:
+  id: tax-compass-chat-api
+info:
+  title: Tax Compass Chat API
+  version: '1.0'
+  description: |
+    API documentation for Tax Compass - An AI-powered tax consultation and advisory platform.
+
+    ## Features
+    - Conversational AI for tax-related queries
+    - Conversation and folder management
+    - File attachments support with AWS S3 storage
+    - Suggested prompts and quick actions
+    - Multi-session chat history
+    - Document library with cloud storage
+
+    ## Authentication
+    All endpoints require JWT Bearer token authentication except registration and login.
+  contact:
+    name: Tax Compass Support
+    email: support@taxcompass.com
+  license:
+    name: Proprietary
+servers:
+  - url: 'http://localhost:3000/api/v1'
+    description: Development server
+  - url: 'https://api.taxcompass.com/v1'
+    description: Production server
+tags:
+  - name: AI Research
+    description: AI-powered tax research and analysis
+  - name: Tax Advice
+    description: Professional tax consultation and advisory
+  - name: Documents
+    description: Document ordering and management
+  - name: Conversations
+    description: Chat conversation management
+  - name: Messages
+    description: Chat messages and completions
+  - name: Folders
+    description: Conversation folder organization
+  - name: Questions
+    description: Tax questions and query management
+  - name: Suggestions
+    description: AI-powered suggestion prompts
+  - name: Attachments
+    description: File upload and management
+  - name: File Library
+    description: User document library with AWS S3 storage
+paths:
+  /ai-research:
+    post:
+      summary: Perform AI research
+      operationId: ai-research
+      description: Conduct AI-powered tax research and analysis
+      tags:
+        - AI Research
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - query
+              properties:
+                query:
+                  type: string
+                  example: Latest tax implications for cryptocurrency trading
+                research_depth:
+                  type: string
+                  enum:
+                    - quick
+                    - standard
+                    - comprehensive
+                  default: standard
+                sources:
+                  type: array
+                  items:
+                    type: string
+                    enum:
+                      - tax_code
+                      - case_law
+                      - IRS_guidelines
+                      - international
+      responses:
+        '200':
+          description: Research completed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/ResearchResult'
+  /tax-advice/consultation:
+    post:
+      summary: Book a consultation
+      operationId: book-consultation
+      description: Schedule a consultation with tax professionals
+      tags:
+        - Tax Advice
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - topic
+                - preferred_date
+              properties:
+                topic:
+                  type: string
+                  example: Business tax planning for 2025
+                description:
+                  type: string
+                  example: Need advice on corporate tax structure
+                preferred_date:
+                  type: string
+                  format: date-time
+                  example: '2025-12-25T10:00:00Z'
+                duration_minutes:
+                  type: integer
+                  enum:
+                    - 30
+                    - 60
+                    - 90
+                  default: 60
+      responses:
+        '201':
+          description: Consultation booked
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Consultation'
+  /tax-advice/ask:
+    post:
+      summary: Ask new tax question
+      operationId: ask-tax-question
+      description: Submit a new tax-related question for expert advice
+      tags:
+        - Tax Advice
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - question
+              properties:
+                question:
+                  type: string
+                  example: How do I claim tax deductions for home office equipment?
+                category:
+                  type: string
+                  enum:
+                    - personal
+                    - business
+                    - corporate
+                    - international
+                  example: business
+                priority:
+                  type: string
+                  enum:
+                    - low
+                    - medium
+                    - high
+                    - urgent
+                  default: medium
+                attachments:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+      responses:
+        '201':
+          description: Question submitted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/TaxQuestion'
+  /documents/order:
+    post:
+      summary: Order a document
+      operationId: order-document
+      description: Request specific tax documents or forms
+      tags:
+        - Documents
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - document_type
+              properties:
+                document_type:
+                  type: string
+                  enum:
+                    - tax_return
+                    - form_1099
+                    - w2
+                    - schedule_c
+                    - business_license
+                    - income_tax_return
+                    - business_activity_statement
+                    - notice_of_assessment
+                    - tax_invoice
+                    - other
+                  example: tax_return
+                tax_year:
+                  type: string
+                  example: '2024'
+                description:
+                  type: string
+                  example: Need amended tax return for 2024
+                delivery_method:
+                  type: string
+                  enum:
+                    - digital
+                    - physical
+                    - both
+                  default: digital
+      responses:
+        '201':
+          description: Document order placed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/DocumentOrder'
+  /documents/orders:
+    get:
+      summary: List document orders
+      operationId: list-document-orders
+      description: Get all document orders
+      tags:
+        - Documents
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum:
+              - pending
+              - processing
+              - completed
+              - cancelled
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+      responses:
+        '200':
+          description: Orders retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      orders:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/DocumentOrder'
+                      pagination:
+                        $ref: '#/components/schemas/Pagination'
+  /questions:
+    get:
+      summary: List unanswered questions
+      operationId: list-questions
+      description: Get all pending tax questions
+      tags:
+        - Questions
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum:
+              - pending
+              - answered
+              - all
+            default: pending
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Questions retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      questions:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/TaxQuestion'
+                      pagination:
+                        $ref: '#/components/schemas/Pagination'
+  /questions/answered:
+    get:
+      summary: List answered questions
+      operationId: list-answered-questions
+      description: Get all answered tax questions with responses
+      tags:
+        - Questions
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Answered questions retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      questions:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/TaxQuestion'
+                      pagination:
+                        $ref: '#/components/schemas/Pagination'
+  '/questions/{questionId}':
+    get:
+      summary: Get question details
+      operationId: get-question
+      description: Retrieve specific question with answer if available
+      tags:
+        - Questions
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: questionId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Question retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/TaxQuestion'
+  /file-library:
+    get:
+      summary: List files in library
+      operationId: list-library-files
+      description: Get all user files from document library stored in AWS S3
+      tags:
+        - File Library
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: folder
+          in: query
+          schema:
+            type: string
+          description: Filter by folder path
+        - name: file_type
+          in: query
+          schema:
+            type: string
+            enum:
+              - pdf
+              - doc
+              - docx
+              - xls
+              - xlsx
+              - image
+              - all
+        - name: search
+          in: query
+          schema:
+            type: string
+          description: Search files by name or tags
+        - name: sort_by
+          in: query
+          schema:
+            type: string
+            enum:
+              - name
+              - date
+              - size
+              - type
+            default: date
+        - name: sort_order
+          in: query
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+            default: desc
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Files retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      files:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/LibraryFile'
+                      pagination:
+                        $ref: '#/components/schemas/Pagination'
+                      storage_info:
+                        type: object
+                        properties:
+                          total_size_bytes:
+                            type: integer
+                            example: 52428800
+                          total_files:
+                            type: integer
+                            example: 24
+                          storage_limit_bytes:
+                            type: integer
+                            example: 1073741824
+    post:
+      summary: Upload file to library
+      operationId: upload-library-file
+      description: Upload a document to user's file library (stored in AWS S3)
+      tags:
+        - File Library
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: File to upload (max 50MB)
+                folder:
+                  type: string
+                  example: Tax Documents 2024
+                tags:
+                  type: array
+                  items:
+                    type: string
+                  example:
+                    - tax_return
+                    - 2024
+                    - personal
+                description:
+                  type: string
+                  example: Annual tax return for 2024
+      responses:
+        '201':
+          description: File uploaded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/LibraryFile'
+        '400':
+          description: Invalid file or size exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  '/file-library/{fileId}':
+    get:
+      summary: Get file details
+      operationId: get-library-file
+      description: Get metadata and presigned URL for file download
+      tags:
+        - File Library
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: fileId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: File details retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    allOf:
+                      - $ref: '#/components/schemas/LibraryFile'
+                      - type: object
+                        properties:
+                          download_url:
+                            type: string
+                            format: uri
+                            description: Presigned S3 URL valid for 1 hour
+                            example: 'https://s3.amazonaws.com/taxcompass-files/user123/doc.pdf?X-Amz-Signature=...'
+    patch:
+      summary: Update file metadata
+      operationId: update-library-file
+      description: 'Update file name, folder, tags, or description'
+      tags:
+        - File Library
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: fileId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: Updated_Tax_Return_2024.pdf
+                folder:
+                  type: string
+                  example: Tax Documents 2025
+                tags:
+                  type: array
+                  items:
+                    type: string
+                description:
+                  type: string
+      responses:
+        '200':
+          description: File updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/LibraryFile'
+    delete:
+      summary: Delete file
+      operationId: delete-library-file
+      description: Remove file from library and AWS S3
+      tags:
+        - File Library
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: fileId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: File deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: File deleted successfully
+  /file-library/folders:
+    get:
+      summary: List library folders
+      operationId: list-library-folders
+      description: Get all folders in file library
+      tags:
+        - File Library
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Folders retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                          example: Tax Documents 2024
+                        file_count:
+                          type: integer
+                          example: 12
+                        total_size_bytes:
+                          type: integer
+                          example: 15728640
+  /file-library/bulk-download:
+    post:
+      summary: Bulk download files
+      operationId: bulk-download-files
+      description: Generate zip archive of multiple files
+      tags:
+        - File Library
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - file_ids
+              properties:
+                file_ids:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+                  example:
+                    - file-uuid-1
+                    - file-uuid-2
+      responses:
+        '200':
+          description: Download link created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      download_url:
+                        type: string
+                        format: uri
+                        example: 'https://s3.amazonaws.com/taxcompass-files/archives/archive-123.zip?X-Amz-Signature=...'
+                      expires_at:
+                        type: string
+                        format: date-time
+                        example: '2025-12-19T12:00:00Z'
+  /conversations:
+    get:
+      summary: List conversations
+      operationId: list-conversations
+      description: Get all conversations with filters
+      tags:
+        - Conversations
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: folder_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: time_filter
+          in: query
+          schema:
+            type: string
+            enum:
+              - today
+              - previous_7_days
+              - all
+              - archived
+            default: all
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        '200':
+          description: Conversations retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      conversations:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Conversation'
+                      pagination:
+                        $ref: '#/components/schemas/Pagination'
+    post:
+      summary: Create new conversation
+      operationId: create-conversation
+      description: Start a new chat conversation
+      tags:
+        - Conversations
+      security:
+        - BearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  example: GST on Digital Sales Query
+                folder_id:
+                  type: string
+                  format: uuid
+      responses:
+        '201':
+          description: Conversation created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Conversation'
+  '/conversations/{conversationId}':
+    get:
+      summary: Get conversation details
+      operationId: get-conversation
+      description: Retrieve specific conversation with messages
+      tags:
+        - Conversations
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Conversation retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/ConversationDetail'
+    patch:
+      summary: Update conversation
+      operationId: update-conversation
+      description: Update conversation title or folder
+      tags:
+        - Conversations
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                folder_id:
+                  type: string
+                  format: uuid
+                is_archived:
+                  type: boolean
+      responses:
+        '200':
+          description: Conversation updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Conversation'
+    delete:
+      summary: Delete conversation
+      operationId: delete-conversation
+      description: Permanently delete a conversation
+      tags:
+        - Conversations
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Conversation deleted
+  '/conversations/{conversationId}/messages':
+    post:
+      summary: Send message
+      operationId: send-message
+      description: Send a message in a conversation and receive AI response
+      tags:
+        - Messages
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - content
+              properties:
+                content:
+                  type: string
+                  example: What are the GST implications for digital services?
+                attachment_ids:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+                model:
+                  type: string
+                  default: tax-compass-v1
+                stream:
+                  type: boolean
+                  default: false
+      responses:
+        '200':
+          description: Message sent and response received
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      user_message:
+                        $ref: '#/components/schemas/Message'
+                      assistant_message:
+                        $ref: '#/components/schemas/Message'
+  /folders:
+    get:
+      summary: List folders
+      operationId: list-folders
+      tags:
+        - Folders
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Folders retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Folder'
+    post:
+      summary: Create folder
+      operationId: create-folder
+      tags:
+        - Folders
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                color:
+                  type: string
+                icon:
+                  type: string
+      responses:
+        '201':
+          description: Folder created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/Folder'
+  '/folders/{folderId}':
+    patch:
+      summary: Update folder
+      operationId: update-folder
+      tags:
+        - Folders
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: folderId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                color:
+                  type: string
+                icon:
+                  type: string
+      responses:
+        '200':
+          description: Folder updated
+    delete:
+      summary: Delete folder
+      operationId: delete-folder
+      tags:
+        - Folders
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: folderId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Folder deleted
+  /suggestions:
+    get:
+      summary: Get suggested prompts
+      operationId: get-suggestions
+      tags:
+        - Suggestions
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: category
+          in: query
+          schema:
+            type: string
+            enum:
+              - tax_queries
+              - business
+              - income
+              - compliance
+              - all
+      responses:
+        '200':
+          description: Suggestions retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Suggestion'
+  /attachments/upload:
+    post:
+      summary: Upload attachment
+      operationId: upload-attachment
+      tags:
+        - Attachments
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '201':
+          description: File uploaded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/Attachment'
+  '/attachments/{attachmentId}':
+    delete:
+      summary: Delete attachment
+      operationId: delete-attachment
+      tags:
+        - Attachments
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: attachmentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Attachment deleted
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token authentication
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: usr-123e4567-e89b
+        email:
+          type: string
+          format: email
+          example: leo@example.com
+        name:
+          type: string
+          example: Leo Smith
+        company:
+          type: string
+          example: ABC Consultants
+        preferences:
+          type: object
+          properties:
+            theme:
+              type: string
+              enum:
+                - light
+                - dark
+            greeting:
+              type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    AuthResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            token:
+              type: string
+              example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+            user:
+              $ref: '#/components/schemas/User'
+            expires_at:
+              type: string
+              format: date-time
+    ResearchResult:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        query:
+          type: string
+        summary:
+          type: string
+        findings:
+          type: array
+          items:
+            type: object
+            properties:
+              title:
+                type: string
+              content:
+                type: string
+              source:
+                type: string
+              relevance_score:
+                type: number
+        sources:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              url:
+                type: string
+              type:
+                type: string
+        created_at:
+          type: string
+          format: date-time
+    Consultation:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        topic:
+          type: string
+        description:
+          type: string
+        scheduled_date:
+          type: string
+          format: date-time
+        duration_minutes:
+          type: integer
+        status:
+          type: string
+          enum:
+            - scheduled
+            - completed
+            - cancelled
+        meeting_link:
+          type: string
+          format: uri
+        consultant:
+          type: object
+          properties:
+            name:
+              type: string
+            title:
+              type: string
+        created_at:
+          type: string
+          format: date-time
+    TaxQuestion:
+      type: object
+      properties:
+        id:
+          type: string
+          example: q-1
+        question:
+          type: string
+        answer:
+          type: string
+        category:
+          type: string
+        priority:
+          type: string
+        status:
+          type: string
+          enum:
+            - pending
+            - answered
+        attachments:
+          type: array
+          items:
+            $ref: '#/components/schemas/Attachment'
+        created_at:
+          type: string
+          format: date-time
+        answered_at:
+          type: string
+          format: date-time
+    DocumentOrder:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        document_type:
+          type: string
+        tax_year:
+          type: string
+        description:
+          type: string
+        delivery_method:
+          type: string
+        status:
+          type: string
+          enum:
+            - pending
+            - processing
+            - completed
+            - cancelled
+        estimated_completion:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+    LibraryFile:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: file-123e4567-e89b
+        name:
+          type: string
+          example: Tax_Return_2024.pdf
+        original_name:
+          type: string
+          example: Tax Return 2024.pdf
+        file_type:
+          type: string
+          example: pdf
+        mime_type:
+          type: string
+          example: application/pdf
+        size_bytes:
+          type: integer
+          example: 2048576
+        folder:
+          type: string
+          example: Tax Documents 2024
+        tags:
+          type: array
+          items:
+            type: string
+          example:
+            - tax_return
+            - 2024
+            - personal
+        description:
+          type: string
+          example: Annual tax return for 2024
+        s3_bucket:
+          type: string
+          example: taxcompass-files-prod
+        s3_key:
+          type: string
+          example: users/usr-123/documents/tax-return-2024.pdf
+        s3_url:
+          type: string
+          format: uri
+          example: 'https://taxcompass-files-prod.s3.amazonaws.com/users/usr-123/documents/tax-return-2024.pdf'
+        thumbnail_url:
+          type: string
+          format: uri
+          description: Thumbnail URL for images/PDFs
+        is_public:
+          type: boolean
+          default: false
+        uploaded_by:
+          type: string
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+          example: '2025-12-19T10:30:00Z'
+        updated_at:
+          type: string
+          format: date-time
+        last_accessed:
+          type: string
+          format: date-time
+    Conversation:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        folder_id:
+          type: string
+          format: uuid
+        message_count:
+          type: integer
+        last_message_at:
+          type: string
+          format: date-time
+        is_archived:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    ConversationDetail:
+      allOf:
+        - $ref: '#/components/schemas/Conversation'
+        - type: object
+          properties:
+            messages:
+              type: array
+              items:
+                $ref: '#/components/schemas/Message'
+    Message:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        conversation_id:
+          type: string
+          format: uuid
+        role:
+          type: string
+          enum:
+            - user
+            - assistant
+        content:
+          type: string
+        attachments:
+          type: array
+          items:
+            $ref: '#/components/schemas/Attachment'
+        metadata:
+          type: object
+          properties:
+            model:
+              type: string
+            tokens_used:
+              type: integer
+        created_at:
+          type: string
+          format: date-time
+    Folder:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        color:
+          type: string
+        icon:
+          type: string
+        conversation_count:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+    Suggestion:
+      type: object
+      properties:
+        id:
+          type: string
+        text:
+          type: string
+        category:
+          type: string
+        icon:
+          type: string
+    Attachment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        filename:
+          type: string
+        file_type:
+          type: string
+        size_bytes:
+          type: integer
+        s3_url:
+          type: string
+          format: uri
+        uploaded_at:
+          type: string
+          format: date-time
+    Pagination:
+      type: object
+      properties:
+        current_page:
+          type: integer
+        total_pages:
+          type: integer
+        total_items:
+          type: integer
+        items_per_page:
+          type: integer
+    Error:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            details:
+              type: object
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
